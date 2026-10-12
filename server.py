@@ -45,7 +45,7 @@ class GameRoomHandler:
         self.p2 = p2
         self.p1.room = self
         self.p2.room = self
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()
         self.game = TwoPlayerGameRoom(room_id, p1.nickname, p2.nickname)
 
     def broadcast(self, payload: dict):

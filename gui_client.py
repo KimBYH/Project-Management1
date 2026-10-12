@@ -260,15 +260,17 @@ class UpDownGUIClient:
         self.is_my_turn = is_my_turn
         if custom_msg:
             self.status_banner.config(text=custom_msg, bg="#45475a")
+            self.guess_entry.config(state=tk.DISABLED)
+            self.guess_btn.config(state=tk.NORMAL, bg="#585b70", fg="#cdd6f4", text="⏳ 대기 중")
         elif is_my_turn:
             self.status_banner.config(text="🟢 [내 차례] 1~100 숫자를 입력하고 추측하세요!", bg="#2e7d32")
             self.guess_entry.config(state=tk.NORMAL)
-            self.guess_btn.config(state=tk.NORMAL)
+            self.guess_btn.config(state=tk.NORMAL, bg="#a6e3a1", fg="#11111b", text="🎯 추측하기 (내 차례)")
             self.guess_entry.focus_set()
         else:
-            self.status_banner.config(text=f"⏳ [{self.opponent_name}]님의 턴입니다. 차례를 기다려주세요...", bg="#c678dd")
+            self.status_banner.config(text=f"⏳ [{self.opponent_name}]님의 턴입니다. (상대방 창에서 진행 중)", bg="#c678dd")
             self.guess_entry.config(state=tk.DISABLED)
-            self.guess_btn.config(state=tk.DISABLED)
+            self.guess_btn.config(state=tk.NORMAL, bg="#45475a", fg="#cdd6f4", text=f"⏳ {self.opponent_name} 턴 진행 중")
 
     def send_chat(self):
         """채팅 메시지 전송"""
@@ -283,11 +285,24 @@ class UpDownGUIClient:
 
     def send_guess(self):
         """숫자 추측 전송"""
-        if not self.is_my_turn or not self.stream:
+        if not self.is_connected or not self.stream:
+            messagebox.showwarning("연결 확인", "아직 서버에 연결되지 않았습니다.")
+            return
+
+        if not self.is_my_turn:
+            messagebox.showinfo(
+                "차례 안내",
+                f"지금은 상대방 [{self.opponent_name}]님의 차례(턴)입니다!\n\n"
+                f"상대방 창([{self.opponent_name}])에서 숫자를 먼저 추측해야 합니다.\n\n"
+                "💡 혹시 화면에 창이 하나만 보인다면, 두 창이 완전히 겹쳐져 있는 것입니다.\n"
+                "현재 창 상단을 마우스로 드래그해서 옆으로 치우면 밑에 있는 상대방 창이 보입니다!"
+            )
             return
 
         val = self.guess_entry.get().strip()
         if not val:
+            messagebox.showwarning("입력 필요", "추측할 1~100 사이의 숫자를 먼저 입력창에 적어주세요!")
+            self.guess_entry.focus_set()
             return
 
         try:
@@ -416,11 +431,16 @@ class UpDownGUIClient:
 
             self.range_hint_label.config(text=f"🎯 정답 추측 범위: {self.min_range} ~ {self.max_range}")
 
+            # 채팅창에도 판정 결과 및 힌트 공유
+            self.append_chat("시스템", hint_msg, "sys_chat")
+
             if round_over:
                 self.update_status(False, f"🏆 라운드 종료! (정답: {msg.get('target')})")
                 self.restart_btn.config(state=tk.NORMAL)
+                self.append_chat("시스템", f"🏆 라운드 종료! 정답은 [{msg.get('target')}]였습니다.", "sys_chat")
             else:
                 self.update_status(next_turn == self.nickname)
+                self.append_chat("시스템", f"👉 다음 차례: [{next_turn}]님의 턴입니다.", "sys_chat")
 
         elif m_type == "ROUND_START":
             self.current_round = msg.get("round", self.current_round + 1)
