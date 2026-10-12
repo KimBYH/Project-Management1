@@ -359,8 +359,9 @@ class UpDownGUIClient:
         m_type = msg.get("type")
 
         if m_type == "WAITING":
-            self.update_status(False, "⏳ " + msg.get("message", "상대방 접속을 기다리는 중..."))
-            self.log_game("📌 상대방의 접속을 기다리는 중입니다... (1/2)")
+            self.update_status(False, "⏳ [대기 중 1/2] 2번째 플레이어가 접속하면 게임판이 활성화됩니다!")
+            self.log_game("📌 상대 플레이어의 접속을 기다리는 중입니다... (1/2)")
+            self.log_game("💡 2인 대결 게임입니다. 2번째 창이 접속하면 숫자 입력창이 열립니다.")
 
         elif m_type == "MATCH_FOUND":
             self.nickname = msg.get("you", self.nickname)

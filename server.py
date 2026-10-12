@@ -258,14 +258,27 @@ class UpDownServer:
                 msg_type = msg.get("type")
                 current_room = session.room
 
-                if msg_type == "CHAT" and current_room:
+                if msg_type == "CHAT":
                     chat_text = str(msg.get("message", "")).strip()
                     if chat_text:
-                        current_room.handle_chat(session, chat_text)
+                        if current_room:
+                            current_room.handle_chat(session, chat_text)
+                        else:
+                            session.stream.send({
+                                "type": "CHAT",
+                                "sender": "시스템",
+                                "message": "상대방 접속을 기다리는 중입니다. 매칭 완료 후 채팅이 전달됩니다."
+                            })
 
-                elif msg_type == "GUESS" and current_room:
-                    number = msg.get("number")
-                    current_room.handle_guess(session, number)
+                elif msg_type == "GUESS":
+                    if current_room:
+                        number = msg.get("number")
+                        current_room.handle_guess(session, number)
+                    else:
+                        session.stream.send({
+                            "type": "ERROR",
+                            "message": "아직 상대 플레이어가 접속하지 않았습니다. 매칭을 기다려주세요."
+                        })
 
                 elif msg_type == "RESTART" and current_room:
                     current_room.handle_restart(session)
